@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<style>
+canvas {
+    border:1px solid #252525;
+    background-color: #252525;
+}
+</style>
+</head>
+<body onload="startGame()">
+
+<script>
+var myGamePiece;
+var myObstacle;
+var myObstacle1;
+var myObstacle2;
+var myObstacle3;
+var myObstacle4;
+var myObstacle5;
+var myObstacle6;
+var myObstacle7;
+var myObstacle8;
+var myObstacle9;
+var myObstacle10;
+var myObstacle11;
+var myObstacle13;
+var myObstacle14;
+var myFinishLine;
+var myScore;
+var bestLap;
+var bestTime;
+var gameStarted;
+var gameState;
+var recordedTime;
+const PLAYING = 0;
+const CRASHED = 1;
+const SUCCEEDED = 2;
+
+function startGame() {
+    myGamePiece = new component(32, 48, "rgb(40,120,200)", 120, 500);
+    myObstacle  = new component(1895, 10, "white", 947.5, 5); 
+    myObstacle1  = new component(960, 10, "white", 720, 236);
+    myObstacle2  = new component(10, 236, "white", 1430, 120);	
+    myObstacle3  = new component(1895, 10, "white", 947.5, 950);
+    myObstacle4  = new component(10, 950, "white", 1890, 475);
+    myObstacle5  = new component(10, 950, "white", 5, 475);
+    myObstacle6  = new component(10, 480, "white", 245, 480);
+    myObstacle7  = new component(10, 480, "white", 1205, 471);
+    myObstacle8  = new component(10, 480, "white", 1660, 475);
+    myObstacle9  = new component(460, 10, "white", 1430, 470);
+    myObstacle10  = new component(10, 236, "white", 1430, 840);
+    myObstacle11 = new component(10, 480, "white", 955, 705);
+    myObstacle12  = new component(460, 10, "white", 720, 470);
+    myObstacle13  = new component(460, 10, "white", 470, 720);
+	myObstacle14  = new component(240, 10, "white", 120, 540);
+	myFinishLine  = new component(240, 20, "white", 120, 555);
+    myScore = new component("30px", "Consolas", "white", 360, 100, "text");
+	bestLap = new component("30px", "Consolas", "white", 558, 60, "text");
+	maxSpeed = new component("30px", "Consolas", "white", 820, 60, "text"); 
+	gameStarted = 0;
+	gameState = PLAYING;
+	bestTime = 30;
+	recordedTime = 31;
+    myGameArea.start();
+}
+
+var myGameArea = {
+    canvas : document.createElement("canvas"),
+    start : function() {
+        this.canvas.width = 1895;
+        this.canvas.height = 955;
+        this.context = this.canvas.getContext("2d");
+        document.body.insertBefore(this.canvas, document.body.childNodes[0]);
+        this.frameNo = 0;
+        this.interval = setInterval(updateGameArea, 20);
+        window.addEventListener('keydown', function (e) {
+            e.preventDefault();
+            myGameArea.keys = (myGameArea.keys || []);
+            myGameArea.keys[e.keyCode] = (e.type == "keydown");
+        })
+        window.addEventListener('keyup', function (e) {
+            myGameArea.keys[e.keyCode] = (e.type == "keydown");
+        })
+    },
+    stop : function() {
+        clearInterval(this.interval);
+    },    
+    clear : function() {
+        this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    }
+}
+
+function component(width, height, color, x, y, type) {
+
+    this.type = type;
+    this.width = width;
+    this.height = height;
+    this.speed = 0;
+    this.angle = 0;
+    this.moveAngle = 0;
+    this.x = x;
+    this.y = y;    
+    this.update = function() {
+        ctx = myGameArea.context;
+	        if (this.type == "text") {
+            ctx.font = this.width + " " + this.height;
+            ctx.fillStyle = color;
+            ctx.fillText(this.text, this.x, this.y);
+        } else {
+        ctx.save();
+        ctx.translate(this.x, this.y);
+        ctx.rotate(this.angle);
+        ctx.fillStyle = color;
+        ctx.fillRect(this.width / -2, this.height / -2, this.width, this.height);
+        ctx.restore(); 
+		}
+    }
+    this.newPos = function() {
+        this.angle += this.moveAngle * Math.PI / 180;
+        this.x += this.speed * Math.sin(this.angle);
+        this.y -= this.speed * Math.cos(this.angle);
+		if (this.speed != 0){
+			gameStarted = 1;
+		}
+    }
+    this.crashWith = function(otherobj) {
+        var myleft = this.x - (this.width/2);
+        var myright = this.x + (this.width/2);
+        var mytop = this.y - ((this.height-8)/2);
+        var mybottom = this.y + ((this.height-8)/2);
+        var otherleft = otherobj.x - (otherobj.width/2);
+        var otherright = otherobj.x + (otherobj.width/2);
+        var othertop = otherobj.y-(otherobj.height/2);
+        var otherbottom = otherobj.y + (otherobj.height/2);
+        var crash = true;
+        if ((mybottom < othertop) || (mytop > otherbottom) || (myright < otherleft) || (myleft > otherright)) {
+            crash = false;
+        }
+        return crash;
+    }
+}
+
+function updateGameArea() {
+    if ((myGamePiece.crashWith(myObstacle)) ||(myGamePiece.crashWith(myObstacle1)) ||(myGamePiece.crashWith(myObstacle2)) ||
+	(myGamePiece.crashWith(myObstacle3)) ||(myGamePiece.crashWith(myObstacle4)) ||(myGamePiece.crashWith(myObstacle5)) ||(myGamePiece.crashWith(myObstacle6)) ||
+	(myGamePiece.crashWith(myObstacle7)) ||(myGamePiece.crashWith(myObstacle8)) ||(myGamePiece.crashWith(myObstacle9)) ||(myGamePiece.crashWith(myObstacle10)) ||
+	(myGamePiece.crashWith(myObstacle11)) ||(myGamePiece.crashWith(myObstacle12)) ||(myGamePiece.crashWith(myObstacle13))||(myGamePiece.crashWith(myObstacle14))){
+       // myGameArea.stop();
+	   gameState = CRASHED;
+	   myGamePiece.speed = 0;
+	   myGamePiece.angle = 0;
+	   myGamePiece.x = 120;
+	   myGamePiece.y = 500;
+    }else if (myGamePiece.crashWith(myFinishLine)){
+		gameState = SUCCEEDED;
+		myGamePiece.speed = 0;
+	   myGamePiece.angle = 0;
+	   myGamePiece.x = 120;
+	   myGamePiece.y = 500;
+	   recordedTime = myGameArea.frameNo/50;
+	}else {
+    myGameArea.clear();
+	if (gameStarted == 1) {
+		myGameArea.frameNo += 1;
+	}
+	myObstacle.update();
+	myObstacle1.update();
+	myObstacle2.update();
+	myObstacle3.update();
+	myObstacle4.update();
+	myObstacle5.update();
+	myObstacle6.update();
+	myObstacle7.update();
+	myObstacle8.update();
+	myObstacle9.update();
+	myObstacle10.update();
+	myObstacle11.update();
+	myObstacle12.update();
+	myObstacle13.update();
+	myObstacle14.update();
+	myFinishLine.update();
+    myGamePiece.moveAngle = 0;
+    myGamePiece.speed *= 0.98;
+	if (gameState == PLAYING) {
+	if (myGameArea.keys && (myGameArea.keys[37] || myGameArea.keys[65])) {myGamePiece.moveAngle = -3.6; }
+    if (myGameArea.keys && (myGameArea.keys[39] || myGameArea.keys[68])) {myGamePiece.moveAngle = 3.6; }
+    if (myGameArea.keys && (myGameArea.keys[38] || myGameArea.keys[87])) {myGamePiece.speed = 8; }
+    if (myGameArea.keys && (myGameArea.keys[40] || myGameArea.keys[83] || myGameArea.keys[32])){
+    if (myGamePiece.speed < 0) myGamePiece.speed -= 0.18; 
+	else myGamePiece.speed -= 0.4;}
+
+		if (gameStarted == 0){
+			myScore.text = "USE ARROWS OR WASD";
+		} else {
+			myScore.text="TIME: " + myGameArea.frameNo/50;
+		}
+		if (recordedTime < bestTime){
+		bestTime = recordedTime;
+		bestLap.text = "BEST LAP: " + bestTime;
+    }else if (recordedTime > bestTime){
+		bestLap.text = "BEST LAP:" + bestTime;
+	}
+	if (bestTime == 30){
+		bestLap.text = "BEST LAP:";	
+		}
+	}else {
+	if (gameState == SUCCEEDED) {
+		myScore.text="WELL DONE.	YOUR TIME: " + recordedTime + "  PRESS ENTER TO REPLAY";
+		} else {
+		myScore.text="GAME OVER.	PRESS ENTER TO REPLAY";
+		}
+		if (myGameArea.keys[13]) {
+		gameState = PLAYING;
+		gameStarted = 0;
+		myGameArea.frameNo = 0;
+		
+	}
+	}
+    myScore.update();	
+	bestLap.update();
+    myGamePiece.newPos();
+    myGamePiece.update();
+}
+}
+</script>
+
+</body>
+</html>
+
+
+
+
+
+
